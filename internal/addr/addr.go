@@ -19,8 +19,11 @@ func init() {
 }
 
 func prepareIP4Range() (*net.IPNet, uint64) {
-	cgnatRange := tsaddr.CGNATRange()
-	_, ipNet, err := net.ParseCIDR(cgnatRange.String())
+	r, err := netip.ParsePrefix("172.16.0.0/12")	
+  if err != nil {
+		panic(err)
+	}
+	_, ipNet, err := net.ParseCIDR(r.String())
 	if err != nil {
 		panic(err)
 	}
