@@ -19,11 +19,8 @@ func init() {
 }
 
 func prepareIP4Range() (*net.IPNet, uint64) {
-	r, err := netip.ParsePrefix("172.16.0.0/12")	
-  if err != nil {
-		panic(err)
-	}
-	_, ipNet, err := net.ParseCIDR(r.String())
+	cgnatRange := tsaddr.CGNATRange()
+	_, ipNet, err := net.ParseCIDR(cgnatRange.String())
 	if err != nil {
 		panic(err)
 	}
@@ -32,12 +29,22 @@ func prepareIP4Range() (*net.IPNet, uint64) {
 
 type Predicate func(netip.Addr) (bool, error)
 
+func Tailscale4To6(ipv4 netip.Addr) netip.Addr {
+	if !ipv4.Is4() {
+		return netip.Addr{}
+	}
+	ret := tsaddr.Tailscale4To6Range().Addr().As16()
+	v4 := ipv4.As4()
+	copy(ret[13:], v4[1:])
+	return netip.AddrFrom16(ret)
+}
+
 func SelectIP(predicate Predicate) (*netip.Addr, *netip.Addr, error) {
 	ip4, err := selectIP(predicate)
 	if err != nil {
 		return nil, nil, err
 	}
-	ip6 := tsaddr.Tailscale4To6(*ip4)
+	ip6 := Tailscale4To6(*ip4)
 	return ip4, &ip6, err
 }
 
